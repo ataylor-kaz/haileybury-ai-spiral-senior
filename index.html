@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Literacy Spiral Curriculum | Years 7-9</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDFCF8; color: #1F2937; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 300ms; }
+        .active-tab { border-bottom: 3px solid #4F46E5; color: #4F46E5; font-weight: 600; }
+        .inactive-tab { border-bottom: 3px solid transparent; color: #6B7280; }
+        .inactive-tab:hover { color: #374151; border-bottom-color: #D1D5DB; }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals with Academic Accents. 
+         Background: #FDFCF8 (Off-white/Paper)
+         Primary Text: #1F2937 (Dark Grey)
+         Accents: 
+            Year 7 (Foundational): #0D9488 (Teal)
+            Year 8 (Technical): #4F46E5 (Indigo)
+            Year 9 (Systemic): #EA580C (Burnt Orange)
+    -->
+    
+    <!-- Application Structure Plan: 
+         The app is designed as an Interactive Curriculum Dashboard using a Tabbed Interface for progression.
+         1. **Hero Section**: Introduces the spiral curriculum concept and Key Stage goals.
+         2. **Progression Overview**: A Radar Chart visualizing the shift in competencies (Conceptual, Critical, Creative) across years.
+         3. **Year-Level Tabs**: The core navigation. Users switch between Y7, Y8, and Y9.
+            - **Theme Banner**: Dynamic header based on the selected year.
+            - **Interactive Module**: A unique interactive element for each year to demonstrate a core concept from that year's curriculum (e.g., Threshold Simulator for Y8).
+            - **Activity Cards**: Detailed breakdown of the 3 core activities per year.
+            - **Lesson Plan Viewer**: Clicking an activity expands the specific L1-L4 breakdown.
+         4. **Footer**: Summary and credits.
+         
+         WHY: This structure allows teachers/users to see the "Big Picture" first (Progression), then drill down into specific years, and finally access the granular lesson plans without being overwhelmed by text. The interactive modules reinforce the "AI Literacy" subject matter itself.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. **Progression Radar Chart (Chart.js)**: 
+            - Goal: Compare the weight of Conceptual vs. Critical vs. Creative literacy per year.
+            - Interaction: Toggle years on/off to see the "spiral" expansion.
+            - Justification: Best way to show multi-variate growth over time.
+         2. **Y7 Data Cycle Stepper (HTML/CSS/JS)**:
+            - Goal: Visualize the "Data Pipeline" theme.
+            - Interaction: Click steps to see definitions.
+            - Justification: Flowcharts are essential for process understanding; implemented via CSS Flexbox (No Mermaid).
+         3. **Y8 Confidence Threshold Simulator (Chart.js Bar)**:
+            - Goal: Teach "Confidence Scores" & "Thresholds".
+            - Interaction: Slider changes the threshold line; bars change color if they pass/fail.
+            - Justification: Directly simulates Activity 1 logic ("It's a cat" vs "Unsure").
+         4. **Y9 Clustering Scatter Plot (Chart.js Scatter)**:
+            - Goal: Visualize "Unsupervised Learning".
+            - Interaction: None (Static snaphot of clusters) but visually distinct colors.
+            - Justification: Best fits the "Recommendation Engine" activity concept.
+         
+         Confirming: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-indigo-600">
+                        AI Literacy Pathway
+                    </span>
+                    <span class="ml-4 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hidden sm:inline-block">
+                        Years 7-9 Curriculum
+                    </span>
+                </div>
+                <nav class="flex space-x-8">
+                    <button onclick="switchView('overview')" id="tab-overview" class="active-tab px-1 pt-1 text-sm font-medium transition-colors">
+                        Overview
+                    </button>
+                    <button onclick="switchView('year7')" id="tab-year7" class="inactive-tab px-1 pt-1 text-sm font-medium transition-colors">
+                        Year 7
+                    </button>
+                    <button onclick="switchView('year8')" id="tab-year8" class="inactive-tab px-1 pt-1 text-sm font-medium transition-colors">
+                        Year 8
+                    </button>
+                    <button onclick="switchView('year9')" id="tab-year9" class="inactive-tab px-1 pt-1 text-sm font-medium transition-colors">
+                        Year 9
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- VIEW: OVERVIEW -->
+        <section id="view-overview" class="space-y-12 animate-fade-in">
+            
+            <!-- Hero Text -->
+            <div class="text-center max-w-3xl mx-auto">
+                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl mb-4">
+                    The Spiral Curriculum
+                </h1>
+                <p class="text-lg text-gray-500">
+                    A progressive journey from <strong>Recognition</strong> (KS2) to <strong>Systemic Ethics</strong> (KS3). 
+                    This course empowers students to move from being consumers of AI technology to becoming analysts and ethical architects.
+                </p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-teal-500 p-5 text-center">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Year 7 Focus</dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">The Data Pipeline</dd>
+                    <dd class="mt-2 text-sm text-gray-600">From Magic to Maths</dd>
+                </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-indigo-500 p-5 text-center">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Year 8 Focus</dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">Neural Networks</dd>
+                    <dd class="mt-2 text-sm text-gray-600">Inside the Brain</dd>
+                </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-orange-500 p-5 text-center">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Year 9 Focus</dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">Systems & Ethics</dd>
+                    <dd class="mt-2 text-sm text-gray-600">The Architect & Society</dd>
+                </div>
+            </div>
+
+            <!-- Competency Chart Section -->
+            <div class="bg-white shadow rounded-lg p-6 md:p-8">
+                <div class="md:flex md:items-start md:justify-between">
+                    <div class="md:w-1/3 pr-6 mb-6 md:mb-0">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Competency Progression</h2>
+                        <p class="text-gray-600 mb-4">
+                            The curriculum is designed as a spiral, revisiting three core literacies with increasing complexity each year.
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <span class="flex-shrink-0 h-5 w-5 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-xs mt-0.5">C</span>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">Conceptual</p>
+                                    <p class="text-xs text-gray-500">Understanding how AI works (Data, Models, Algorithms).</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="flex-shrink-0 h-5 w-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs mt-0.5">Cr</span>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">Critical</p>
+                                    <p class="text-xs text-gray-500">Evaluating reliability, bias, and ethical impact.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="flex-shrink-0 h-5 w-5 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs mt-0.5">Cv</span>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">Creative</p>
+                                    <p class="text-xs text-gray-500">Building, coding, and designing with AI tools.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="md:w-2/3 flex justify-center">
+                        <div class="chart-container">
+                            <canvas id="progressionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DYNAMIC YEAR VIEW (Content injected via JS) -->
+        <section id="view-year-content" class="hidden space-y-8 animate-fade-in">
+            <!-- Theme Banner -->
+            <div id="year-theme-banner" class="rounded-xl p-8 text-white shadow-lg transition-colors duration-500">
+                <div class="md:flex justify-between items-end">
+                    <div>
+                        <p class="text-sm uppercase tracking-wider font-semibold opacity-80" id="year-label">Year 7</p>
+                        <h2 class="text-3xl font-bold mt-1" id="year-theme-title">Theme Title</h2>
+                        <p class="mt-2 text-lg opacity-90 max-w-2xl" id="year-theme-goal">Conceptual Goal...</p>
+                    </div>
+                    <div class="hidden md:block text-right">
+                         <span class="text-4xl font-mono opacity-20">AI-LIT</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Concept Simulation / Interactive Visualization -->
+            <div class="bg-white rounded-lg shadow border border-gray-100 p-6">
+                <div class="mb-4 pb-4 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-800">Interactive Concept Lab</h3>
+                    <span class="text-xs font-mono text-gray-500 bg-gray-50 px-2 py-1 rounded">Simulation</span>
+                </div>
+                
+                <div id="year-visualization-container" class="w-full">
+                    <!-- Dynamic Viz content goes here -->
+                </div>
+                <p id="viz-caption" class="mt-4 text-sm text-gray-500 italic text-center">Interact with the element above to explore the concept.</p>
+            </div>
+
+            <!-- Activities Grid -->
+            <div>
+                <h3 class="text-xl font-bold text-gray-900 mb-6">Core Computing Activities</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="activities-grid">
+                    <!-- Activity Cards Injected Here -->
+                </div>
+            </div>
+
+            <!-- Detailed Lesson View (Initially Hidden) -->
+            <div id="lesson-detail-panel" class="hidden bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                <div class="p-6 bg-white border-b border-gray-200 flex justify-between items-start">
+                    <div>
+                        <h4 class="text-2xl font-bold text-gray-900" id="detail-title">Activity Title</h4>
+                        <div class="flex items-center space-x-4 mt-2">
+                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" id="detail-duration">3 Lessons</span>
+                             <span class="text-sm text-gray-500" id="detail-ncce">NCCE Link</span>
+                        </div>
+                    </div>
+                    <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-500">
+                        <span class="text-2xl">&times;</span>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-700 mb-6 italic" id="detail-context">Context goes here...</p>
+                    <div class="space-y-4" id="detail-lessons">
+                        <!-- Lessons injected here -->
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-gray-200">
+                        <span class="text-xs font-bold text-gray-500 uppercase">HPL Link:</span>
+                        <span class="text-sm text-gray-700 ml-2" id="detail-hpl">...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-50 border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            <p>&copy; 2025 AI Literacy Curriculum. Designed for UK Secondary Progression.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA STORE ---
+        const curriculumData = {
+            year7: {
+                label: "Year 7",
+                theme: "From Magic to Maths",
+                color: "teal",
+                goal: "Moving beyond 'it learns' to understanding the Data Cycle: Collection -> Cleaning -> Labelling -> Training -> Testing.",
+                vizType: "dataCycle",
+                activities: [
+                    {
+                        id: "y7a1",
+                        title: "Activity 1: The Bias Hunter",
+                        type: "Conceptual/Critical",
+                        duration: "3 Lessons",
+                        ncce: "Data Representation / Spreadsheets",
+                        context: "AI doesn't 'know' anything; it mimics the labels humans give it.",
+                        hpl: "Critical Thinking (evaluating evidence)",
+                        lessons: [
+                            { title: "L1: The Human Label", desc: "Students manually label a 'dirty' dataset (images/text). Discovery: Humans disagree on labels (Subjectivity)." },
+                            { title: "L2: Bias Injection", desc: "Analyze a dataset that is 90% one demographic. Predict model failure. Intro to 'Representation Bias'." },
+                            { title: "L3: Teachable Machine Audit", desc: "Train a model intentionally using poor lighting/angles. Write a 'Model Card' explaining limitations." }
+                        ]
+                    },
+                    {
+                        id: "y7a2",
+                        title: "Activity 2: Computer Vision & Sensors",
+                        type: "Conceptual/Creative",
+                        duration: "4 Lessons",
+                        ncce: "Physical Computing (Micro:bit)",
+                        context: "How raw data (numbers) becomes understanding.",
+                        hpl: "Agility (Connection finding)",
+                        lessons: [
+                            { title: "L1: Pixels as Numbers", desc: "Use spreadsheets to 'draw' with conditional formatting (0=Black, 1=White). Computers see matrices, not pics." },
+                            { title: "L2: Gesture Control", desc: "Micro:bit accelerometer. Train a decision tree: 'If X > 500, then display Arrow'." },
+                            { title: "L3/L4: The AI Remote", desc: "Connect Micro:bit to Teachable Machine audio model. Voice commands trigger Micro:bit LED matrix." }
+                        ]
+                    },
+                    {
+                        id: "y7a3",
+                        title: "Activity 3: The Chatbot Logic",
+                        type: "Conceptual",
+                        duration: "3 Lessons",
+                        ncce: "Programming Essentials in Scratch",
+                        context: "Why old chatbots were bad and new ones are good.",
+                        hpl: "Meta-thinking",
+                        lessons: [
+                            { title: "L1: Decision Trees", desc: "Code a 'Chatbot' in Scratch using `If/Else`. Realise limitation: breaks if you misspell." },
+                            { title: "L2: NLP Intro", desc: "Keywords and Intent. How AI guesses meaning even with spelling errors." },
+                            { title: "L3: Turing Test Challenge", desc: "Pair up: One uses Scratch bot, one acts human. Third student guesses who is who." }
+                        ]
+                    }
+                ]
+            },
+            year8: {
+                label: "Year 8",
+                theme: "Inside the Brain",
+                color: "indigo",
+                goal: "Understanding Neural Networks (simplified), Weights/Biases, and the mechanics of Generative AI.",
+                vizType: "thresholdSim",
+                activities: [
+                    {
+                        id: "y8a1",
+                        title: "Activity 1: Python & The Algorithm",
+                        type: "Conceptual/Creative",
+                        duration: "4 Lessons",
+                        ncce: "Python Programming",
+                        context: "AI isn't Yes/No; it is 'I am 87% sure'.",
+                        hpl: "Hard Work (Practice)",
+                        lessons: [
+                            { title: "L1: Probability in Code", desc: "Write Python using `random` libraries to simulate a 'guess'." },
+                            { title: "L2: The Threshold", desc: "Code: `if confidence > 0.8`. Adjust threshold variable to change AI 'strictness'." },
+                            { title: "L3/L4: Text Adventure AI", desc: "Write a text adventure where enemies choose attacks based on probability logic." }
+                        ]
+                    },
+                    {
+                        id: "y8a2",
+                        title: "Activity 2: How LLMs 'Read'",
+                        type: "Conceptual",
+                        duration: "3 Lessons",
+                        ncce: "Data Science",
+                        context: "How ChatGPT turns words into math (Tokenization & Vectors).",
+                        hpl: "Analysing",
+                        lessons: [
+                            { title: "L1: Tokenization", desc: "Unplugged: Break sentences into 'tokens'. Play 'Next Token Prediction' game manually." },
+                            { title: "L2: Vector Space", desc: "Physical activity: Map words on 2D graph (Happy/Sad vs Living/Non-living)." },
+                            { title: "L3: Embeddings", desc: "Visualize how AI finds 'similar' concepts by calculating distance between points." }
+                        ]
+                    },
+                    {
+                        id: "y8a3",
+                        title: "Activity 3: Deepfakes & Reality",
+                        type: "Critical",
+                        duration: "3 Lessons",
+                        ncce: "Media / Cyber Security",
+                        context: "The battle between the 'Forger' and the 'Detective' (GANs).",
+                        hpl: "Intellectual Confidence",
+                        lessons: [
+                            { title: "L1: Forger vs Detective", desc: "Roleplay GAN architecture. One student draws; another critiques until it looks real." },
+                            { title: "L2: Forensics", desc: "Examining AI images for artifacts (lighting, text garbling, pupil shape)." },
+                            { title: "L3: Impact of Fake News", desc: "Case studies (elections/bullying). Design a 'Verification Checklist'." }
+                        ]
+                    }
+                ]
+            },
+            year9: {
+                label: "Year 9",
+                theme: "The Architect & The Society",
+                color: "orange",
+                goal: "Unsupervised Learning, Reinforcement Learning, and Environmental/Social impact.",
+                vizType: "clustering",
+                activities: [
+                    {
+                        id: "y9a1",
+                        title: "Activity 1: The Recommendation Engine",
+                        type: "Conceptual",
+                        duration: "4 Lessons",
+                        ncce: "Data Science",
+                        context: "How Spotify/TikTok knows you better than you know yourself (Clustering).",
+                        hpl: "Meta-thinking",
+                        lessons: [
+                            { title: "L1: Clustering", desc: "Dataset of 'User Music Preferences'. Circle groups (clusters) of similar users." },
+                            { title: "L2: Collaborative Filtering", desc: "'Users who bought X also bought Y'. Calculate recommendations manually via matrix." },
+                            { title: "L3: The Filter Bubble", desc: "Critical Literacy: Echo chambers and radicalisation consequence of clustering." },
+                            { title: "L4: Designing the Feed", desc: "Design a flow-chart for an algorithm prioritizing 'Mental Health' over 'Engagement'." }
+                        ]
+                    },
+                    {
+                        id: "y9a2",
+                        title: "Activity 2: AI Integration Project",
+                        type: "Creative/Synthesis",
+                        duration: "4 Lessons",
+                        ncce: "App Development / Web Design",
+                        context: "Using AI as a component (API) in a larger software product.",
+                        hpl: "Realising",
+                        lessons: [
+                            { title: "L1: Prompt Engineering Code", desc: "Use AI to generate HTML/CSS frameworks for an app (e.g., Recycling Tracker)." },
+                            { title: "L2: Debugging AI Code", desc: "Fix errors in generated code. Emphasize needing knowledge to manage AI." },
+                            { title: "L3: Asset Generation", desc: "Use Image Generators to create UI icons and backgrounds." },
+                            { title: "L4: The Ethics Pitch", desc: "Present app with 'Ethical Impact Statement' (Data ownership/Bias)." }
+                        ]
+                    },
+                    {
+                        id: "y9a3",
+                        title: "Activity 3: The Future of Intelligence",
+                        type: "Critical",
+                        duration: "3 Lessons",
+                        ncce: "Impact of Technology",
+                        context: "Reinforcement Learning & Alignment Problem.",
+                        hpl: "Linking (Comp Sci to Enviro Sci)",
+                        lessons: [
+                            { title: "L1: Paperclip Maximiser", desc: "Thought experiment: AI destroys world to make paperclips (Goal Alignment)." },
+                            { title: "L2: Alignment Problem", desc: "Simulation games (Universal Paperclips). How to set safe goals." },
+                            { title: "L3: Environmental Cost", desc: "Calculate carbon footprint of training models vs Google Search." }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // --- STATE MANAGEMENT ---
+        let currentView = 'overview';
+        let charts = {}; // Store chart instances
+
+        // --- DOM ELEMENTS ---
+        const viewOverview = document.getElementById('view-overview');
+        const viewYearContent = document.getElementById('view-year-content');
+        const navTabs = {
+            overview: document.getElementById('tab-overview'),
+            year7: document.getElementById('tab-year7'),
+            year8: document.getElementById('tab-year8'),
+            year9: document.getElementById('tab-year9'),
+        };
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderOverviewChart();
+        });
+
+        // --- VIEW SWITCHING LOGIC ---
+        function switchView(viewName) {
+            currentView = viewName;
+            
+            // Update Nav Styles
+            Object.keys(navTabs).forEach(key => {
+                if (key === viewName) {
+                    navTabs[key].className = 'active-tab px-1 pt-1 text-sm font-medium transition-colors';
+                } else {
+                    navTabs[key].className = 'inactive-tab px-1 pt-1 text-sm font-medium transition-colors';
+                }
+            });
+
+            // Toggle Sections
+            if (viewName === 'overview') {
+                viewYearContent.classList.add('hidden');
+                viewOverview.classList.remove('hidden');
+            } else {
+                viewOverview.classList.add('hidden');
+                viewYearContent.classList.remove('hidden');
+                renderYearContent(viewName);
+            }
+            
+            // Scroll top
+            window.scrollTo(0,0);
+        }
+
+        // --- CONTENT RENDERING ---
+
+        function renderYearContent(yearKey) {
+            const data = curriculumData[yearKey];
+            
+            // 1. Update Banner
+            const banner = document.getElementById('year-theme-banner');
+            banner.className = `rounded-xl p-8 text-white shadow-lg transition-colors duration-500 bg-${data.color}-600`;
+            // Tailwind doesn't support dynamic class construction safely for CDN without safelist, 
+            // so we set style directly for bg color to be safe or use specific logic
+            const colorMap = {
+                year7: 'bg-teal-600',
+                year8: 'bg-indigo-600',
+                year9: 'bg-orange-600'
+            };
+            banner.className = `rounded-xl p-8 text-white shadow-lg transition-colors duration-500 ${colorMap[yearKey]}`;
+
+            document.getElementById('year-label').innerText = data.label;
+            document.getElementById('year-theme-title').innerText = data.theme;
+            document.getElementById('year-theme-goal').innerText = data.goal;
+
+            // 2. Render Visualization
+            const vizContainer = document.getElementById('year-visualization-container');
+            vizContainer.innerHTML = ''; // Clear prev
+            const caption = document.getElementById('viz-caption');
+
+            if (data.vizType === 'dataCycle') {
+                renderDataCycleViz(vizContainer);
+                caption.innerText = "Click steps in the pipeline to reveal potential points of failure/bias.";
+            } else if (data.vizType === 'thresholdSim') {
+                renderThresholdSim(vizContainer);
+                caption.innerText = "Adjust the Confidence Threshold slider. See how it changes the AI's decision to accept/reject data.";
+            } else if (data.vizType === 'clustering') {
+                renderClusteringViz(vizContainer);
+                caption.innerText = "Visualizing User Clusters. AI suggests content based on which group you fall into.";
+            }
+
+            // 3. Render Activities
+            const grid = document.getElementById('activities-grid');
+            grid.innerHTML = '';
+            
+            data.activities.forEach((act, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-white border border-gray-200 rounded-lg p-6 card-hover cursor-pointer transition-all";
+                card.onclick = () => showActivityDetail(yearKey, index);
+                
+                let typeColor = 'gray';
+                if(act.type.includes('Conceptual')) typeColor = 'teal';
+                if(act.type.includes('Critical')) typeColor = 'red';
+                if(act.type.includes('Creative')) typeColor = 'blue';
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${typeColor}-100 text-${typeColor}-800">
+                            ${act.type}
+                        </span>
+                        <span class="text-xs text-gray-400 font-mono">Activity ${index + 1}</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-gray-900 mb-2">${act.title}</h4>
+                    <p class="text-sm text-gray-600 mb-4 line-clamp-2">${act.context}</p>
+                    <div class="flex items-center text-xs text-gray-500">
+                        <span class="mr-4">⏱ ${act.duration}</span>
+                        <span>🔗 ${act.ncce.split('/')[0]}</span>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+                        <span class="text-indigo-600 text-sm font-medium hover:underline">View Lessons &rarr;</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Hide detail panel initially
+            document.getElementById('lesson-detail-panel').classList.add('hidden');
+        }
+
+        function showActivityDetail(yearKey, index) {
+            const act = curriculumData[yearKey].activities[index];
+            const panel = document.getElementById('lesson-detail-panel');
+            
+            document.getElementById('detail-title').innerText = act.title;
+            document.getElementById('detail-duration').innerText = act.duration;
+            document.getElementById('detail-ncce').innerText = act.ncce;
+            document.getElementById('detail-context').innerText = act.context;
+            document.getElementById('detail-hpl').innerText = act.hpl;
+
+            const lessonsContainer = document.getElementById('detail-lessons');
+            lessonsContainer.innerHTML = '';
+            
+            act.lessons.forEach(lesson => {
+                const lDiv = document.createElement('div');
+                lDiv.className = "flex";
+                lDiv.innerHTML = `
+                    <div class="flex-shrink-0 mr-4">
+                        <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                            ${lesson.title.split(':')[0].replace('L','')}
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-bold text-gray-900">${lesson.title.split(':')[1] || lesson.title}</h5>
+                        <p class="text-sm text-gray-600 mt-1">${lesson.desc}</p>
+                    </div>
+                `;
+                lessonsContainer.appendChild(lDiv);
+            });
+
+            panel.classList.remove('hidden');
+            // smooth scroll to panel
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function closeDetail() {
+            document.getElementById('lesson-detail-panel').classList.add('hidden');
+        }
+
+        // --- VISUALIZATION FUNCTIONS ---
+
+        // 1. Overview Radar Chart
+        function renderOverviewChart() {
+            const ctx = document.getElementById('progressionChart').getContext('2d');
+            
+            // Destroy existing if switching back
+            if(charts.overview) charts.overview.destroy();
+
+            charts.overview = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Conceptual (Understanding)', 'Critical (Ethics/Bias)', 'Creative (Building)'],
+                    datasets: [
+                        {
+                            label: 'Year 7',
+                            data: [90, 60, 40], // High concept, Med crit, Low creative
+                            fill: true,
+                            backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                            borderColor: 'rgb(13, 148, 136)',
+                            pointBackgroundColor: 'rgb(13, 148, 136)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(13, 148, 136)'
+                        },
+                        {
+                            label: 'Year 8',
+                            data: [80, 50, 85], // High concept, High creative (coding), Med crit
+                            fill: true,
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            borderColor: 'rgb(79, 70, 229)',
+                            pointBackgroundColor: 'rgb(79, 70, 229)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(79, 70, 229)'
+                        },
+                        {
+                            label: 'Year 9',
+                            data: [60, 90, 80], // Med concept, High Critical, High Creative
+                            fill: true,
+                            backgroundColor: 'rgba(234, 88, 12, 0.2)',
+                            borderColor: 'rgb(234, 88, 12)',
+                            pointBackgroundColor: 'rgb(234, 88, 12)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(234, 88, 12)'
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    elements: { line: { borderWidth: 2 } },
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { display: false } // Hide numbers for cleaner look
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // 2. Y7 Data Cycle (HTML Interactive)
+        function renderDataCycleViz(container) {
+            container.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 relative py-8">
+                    <!-- Line connector -->
+                    <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10 hidden md:block transform -translate-y-1/2"></div>
+                    
+                    ${['Collection', 'Cleaning', 'Labelling', 'Training', 'Testing'].map((step, i) => `
+                        <div class="cycle-step group relative cursor-pointer" onclick="toggleStepInfo(${i})">
+                            <div class="w-16 h-16 rounded-full bg-white border-4 border-teal-500 flex items-center justify-center font-bold text-teal-700 shadow-md group-hover:scale-110 transition-transform z-10">
+                                ${i+1}
+                            </div>
+                            <div class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-sm font-semibold text-gray-700">${step}</div>
+                            
+                            <!-- Tooltip/Info Box -->
+                            <div id="step-info-${i}" class="hidden absolute bottom-20 left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 text-white text-xs rounded p-3 z-20 text-center arrow-bottom">
+                                <span class="block font-bold mb-1 text-teal-300">Potential Issue:</span>
+                                ${getStepInfo(step)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function getStepInfo(step) {
+            const infos = {
+                'Collection': 'Data gaps! If you only collect photos of sunny days, the AI fails in rain.',
+                'Cleaning': 'Human error! Accidentally deleting useful data or corrupting files.',
+                'Labelling': 'Subjectivity! Does one person think this face looks "Happy" while another says "Neutral"?',
+                'Training': 'Overfitting! The AI memorizes the data instead of learning patterns.',
+                'Testing': 'Real-world failure! The test data was too similar to training data (Leakage).'
+            };
+            return infos[step];
+        }
+
+        window.toggleStepInfo = function(index) {
+            // Hide all others
+            document.querySelectorAll('[id^="step-info-"]').forEach(el => el.classList.add('hidden'));
+            // Show current
+            document.getElementById(`step-info-${index}`).classList.remove('hidden');
+        }
+
+        // 3. Y8 Threshold Simulator (Chart.js Bar)
+        function renderThresholdSim(container) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center w-full">
+                    <div class="w-full flex items-center justify-center space-x-4 mb-4">
+                        <label class="text-sm font-bold text-gray-700">Confidence Threshold:</label>
+                        <input type="range" id="thresholdSlider" min="0" max="100" value="70" class="w-48 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <span id="thresholdValue" class="text-sm font-mono bg-indigo-100 text-indigo-700 px-2 py-1 rounded">70%</span>
+                    </div>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="thresholdChart"></canvas>
+                    </div>
+                </div>
+            `;
+
+            const ctx = document.getElementById('thresholdChart').getContext('2d');
+            const initialData = [45, 88, 12, 95, 67, 72, 30, 99]; // Mock confidence scores
+            const threshold = 70;
+
+            charts.y8 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Img 1', 'Img 2', 'Img 3', 'Img 4', 'Img 5', 'Img 6', 'Img 7', 'Img 8'],
+                    datasets: [{
+                        label: 'AI Confidence Score (%)',
+                        data: initialData,
+                        backgroundColor: initialData.map(v => v >= threshold ? '#4F46E5' : '#E5E7EB'), // Indigo if pass, Gray if fail
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, title: {display: true, text: 'Confidence %'} }
+                    },
+                    plugins: {
+                        annotation: { // Note: Chart.js annotation plugin needed for lines, but simulating with bar colors is enough for basic no-plugin setup
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const val = ctx.raw;
+                                    const thresh = document.getElementById('thresholdSlider').value;
+                                    return `Score: ${val}% (${val >= thresh ? 'ACCEPTED' : 'REJECTED'})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Event Listener for Slider
+            const slider = document.getElementById('thresholdSlider');
+            slider.addEventListener('input', (e) => {
+                const val = e.target.value;
+                document.getElementById('thresholdValue').innerText = val + '%';
+                
+                // Update chart colors
+                charts.y8.data.datasets[0].backgroundColor = initialData.map(d => d >= val ? '#4F46E5' : '#E5E7EB');
+                charts.y8.update();
+            });
+        }
+
+        // 4. Y9 Clustering Viz (Chart.js Scatter)
+        function renderClusteringViz(container) {
+            container.innerHTML = `
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="clusterChart"></canvas>
+                </div>
+                <div class="flex justify-center space-x-4 mt-2 text-xs text-gray-500">
+                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-orange-500 mr-1"></span> Cluster A: Pop/Chart</div>
+                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-500 mr-1"></span> Cluster B: Indie/Alt</div>
+                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-green-500 mr-1"></span> Cluster C: Metal/Rock</div>
+                </div>
+            `;
+
+            const ctx = document.getElementById('clusterChart').getContext('2d');
+            
+            // Mock Data Generation
+            const generateCluster = (centerX, centerY, count) => {
+                return Array.from({length: count}, () => ({
+                    x: centerX + (Math.random() - 0.5) * 20,
+                    y: centerY + (Math.random() - 0.5) * 20
+                }));
+            };
+
+            charts.y9 = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Pop/Chart Users',
+                            data: generateCluster(20, 80, 15),
+                            backgroundColor: '#F97316' // Orange
+                        },
+                        {
+                            label: 'Indie/Alt Users',
+                            data: generateCluster(70, 70, 15),
+                            backgroundColor: '#3B82F6' // Blue
+                        },
+                        {
+                            label: 'Metal/Rock Users',
+                            data: generateCluster(50, 30, 15),
+                            backgroundColor: '#22C55E' // Green
+                        },
+                        {
+                            label: 'New User (You)',
+                            data: [{x: 55, y: 35}],
+                            backgroundColor: '#000',
+                            pointStyle: 'star',
+                            radius: 8
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Beats Per Minute Preference' }, min: 0, max: 100 },
+                        y: { title: { display: true, text: 'Acoustic vs Electronic' }, min: 0, max: 100 }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    if(ctx.datasetIndex === 3) return "Based on your listens, you are closest to Metal/Rock.";
+                                    return `User ID: ${Math.floor(Math.random()*1000)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
